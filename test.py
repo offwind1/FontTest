@@ -9,19 +9,44 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 import os
 import json
+import sys
 
-ROOT_DIR = os.path.abspath("")
+# ROOT_DIR = os.path.abspath("")
+# FONT_DIR = os.path.join(ROOT_DIR, "fonts/")
+
+ROOT_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
 FONT_DIR = os.path.join(ROOT_DIR, "fonts/")
-SAVE_DIR = os.path.join(ROOT_DIR, "0717_imgs/")
-SAVE_LABELTXT_PATH = os.path.join(ROOT_DIR, "0717_labs/")
+
+SAVE_ROOT_DIR = ""
+VALUE = 0
+
+SAVE_DIR = os.path.join(SAVE_ROOT_DIR, "imgs/")
+SAVE_LABELTXT_PATH = os.path.join(SAVE_ROOT_DIR, "labs/")
+
 SAVE_trainTXT_PATH = os.path.join(ROOT_DIR, "0717_imgs_train.txt")
 SAVE_valTXT_PATH = os.path.join(ROOT_DIR, "0717_imgs_val.txt")
 SAVE_ClassIDDIC_PATH = os.path.join(ROOT_DIR, "ClassIDDIC.txt")
 
-print(FONT_DIR)
-print(SAVE_DIR)
-print(SAVE_LABELTXT_PATH)
-print(SAVE_ClassIDDIC_PATH)
+
+def update_save_path(path):
+    global SAVE_ROOT_DIR
+    global SAVE_DIR
+    global SAVE_LABELTXT_PATH
+
+    SAVE_ROOT_DIR = path
+    SAVE_DIR = os.path.join(SAVE_ROOT_DIR, "imgs")
+    SAVE_LABELTXT_PATH = os.path.join(SAVE_ROOT_DIR, "labs")
+
+    if not os.path.exists(SAVE_DIR):
+        os.mkdir(SAVE_DIR)
+    if not os.path.exists(SAVE_LABELTXT_PATH):
+        os.mkdir(SAVE_LABELTXT_PATH)
+
+    # print(FONT_DIR)
+    # print(SAVE_DIR)
+    # print(SAVE_LABELTXT_PATH)
+    # print(SAVE_ClassIDDIC_PATH)
+
 
 # 目的：生成训练图片
 #
@@ -666,9 +691,8 @@ def PIL_fillText_boxfill(img, img_size, numberTextArr, questionTextArr, fontname
 
 
 def PIL_saveImg(img, name):
-    savepath = SAVE_DIR + name
+    savepath = os.path.join(SAVE_DIR, name)
     print(savepath)
-
     img.save(savepath)
     return
 
@@ -763,16 +787,16 @@ backimg = PIL_getbackgroundImg(pagesize, COLOR_WHITE)
 # 字体文件名
 fontnames = ["simfang.ttf", "SIMLI.TTF", "simsun.ttc"]
 
-questionfontnames = ["batang.ttc", "CALISTI.TTF", "GARA.TTF", "himalaya.ttf", "kaiu.ttf", "MONBAITI.TTF", \
-                     "msmincho.ttc", "Shonar.ttf", "simfang.ttf", "SIMLI.TTF", "simsun.ttc", "simsunb.ttf", \
+questionfontnames = ["batang.ttc", "CALISTI.TTF", "GARA.TTF", "himalaya.ttf", "kaiu.ttf", "MONBAITI.TTF",
+                     "msmincho.ttc", "Shonar.ttf", "simfang.ttf", "SIMLI.TTF", "simsun.ttc", "simsunb.ttf",
                      "times.ttf"]
 
 # 字号14-18
 fontsizes = [14, 16, 18]
 
 # 题号填充内容
-numberTextArr = ["1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.", "10.", \
-                 "11.", "12.", "13.", "14.", "15.", "16.", "17.", "18.", "19.", "20.", \
+numberTextArr = ["1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.", "10.",
+                 "11.", "12.", "13.", "14.", "15.", "16.", "17.", "18.", "19.", "20.",
                  "21.", "22.", "23.", "24.", "25.", "26.", "27.", "28.", "29.", "30."]
 
 # 题干填充内容
@@ -798,16 +822,20 @@ questionFlow = [1, 2]
 questionLineCount = [2, 3, 4, 5]
 
 
-def save_json(path, json_data):
+def save_json__(path, json_data):
+    print(path)
     with open(path, "w", encoding="utf-8") as f:
         f.write(json.dumps(json_data))
 
 
-def go(msg):
-    json = {}
-    savelabelpath = SAVE_LABELTXT_PATH + "creat_page_" + ".json"
+def go(msg, func=None):
+    # json = {}
+    # savelabelpath = os.path.join(SAVE_LABELTXT_PATH, "creat_page.json")
 
     for i in range(ImgBegin, ImgCount):
+        json = {}
+        savelabelpath = os.path.join(SAVE_LABELTXT_PATH, "creat_page_{}.json".format(i))
+
         savename = "creat_page_" + str(i) + ".jpg"
 
         # fill_re,txts = PIL_fillText_boxfill(backimg,pagesize,numberTextArr,fontnames,fontsizes)
@@ -826,13 +854,17 @@ def go(msg):
 
         fill_re = do(fill_re)
         showimg(fill_re, str(i))
+        save_json__(savelabelpath, json)
 
-    save_json(savelabelpath, json)
+        if func:
+            func()
+
+    # save_json__(savelabelpath, json)
 
     return
 
 
-go(1)
+# go(1)
 
 
 # p = Pool(16)
