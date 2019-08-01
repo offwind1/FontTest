@@ -1,29 +1,43 @@
 from PIL import ImageFont, ImageDraw, Image
+from .canvas import Canvas
+from .color import OColor
+from .question import Question
+from utility import *
+from .setting import Singleton
 
 
-class Paper():
+class Paper(Canvas):
     # 纸张大小
     PAPER_SIZE_A4 = (1280, 1280)  # PIX
     # 纸张内边距
     PAPER_MARGIN_NORMAL = (150, 188, 150, 188)  # PIX, 上左下右
 
-    def __init__(self):
-        self._size = Paper.PAPER_SIZE_A4
-        self._margin = Paper.PAPER_MARGIN_NORMAL
+    def __init__(self, size=PAPER_SIZE_A4, margin=PAPER_MARGIN_NORMAL, color=OColor.WHITE):
+        self.setting = Singleton().paper_setting
 
-        self._print_size = (0, 0)
-        self._scale = 1
+        super().__init__()
 
-        # 分栏
-        self.subField = 1
-        # 间距
-        self.spacing = 80
+        self._size = self.setting.size
+        self.subField = self.setting.subField
+        self.spacing = self.setting.spacing
+        # self._size = size
+        # # 分栏
+        # self.subField = 1
+        # # 间距
+        # self.spacing = 80
+
+        self.img = self.image
+
+        self.reouser_list = []
 
     def setSubField(self, num):
         self.subField = num
 
     def setSpacing(self, num):
         self.spacing = num
+
+    def pasteImage(self, point, img):
+        self.img.paste(img, point)
 
     @property
     def size(self):
@@ -36,22 +50,6 @@ class Paper():
     @property
     def height(self):
         return self._size[1]
-
-    @property
-    def top(self):
-        return self._margin[0]
-
-    @property
-    def left(self):
-        return self._margin[1]
-
-    @property
-    def down(self):
-        return self._margin[2]
-
-    @property
-    def right(self):
-        return self._margin[3]
 
     def setPaperSize(self, size):
         self._size = size
@@ -82,6 +80,47 @@ class Paper():
 
         return list
 
+    def addQuestions(self, ):
+        for rect in self.getEditableArea():
+            self.addQuestionsInRect(rect)
+
+    def addQuestionsInRect(self, rect):
+        x, y, w, h = rect
+        focus_point = (x, y)
+
+        question = Question(w)
+        while add_point_y(focus_point, question.size) < y + h:
+            self.pasteImage(focus_point, question.img)
+            self.reouser_list.extend(question.chars_box(focus_point))
+            focus_point = (x, add_point_y(focus_point, question.size))
+            question = Question(w)
+
+    def creat_regions(self):
+
+        regions = []
+        for x, y, w, h in self.reouser_list:
+            regions.append({
+                "region_attributes": {
+                    "page_class_id": 1
+                },
+                "shape_attributes": {
+                    "name": "rect",
+                    "x": x,
+                    "y": y,
+                    "width": w,
+                    "height": h
+                }
+            })
+
+        json = {
+            "filename": "123.jpg",
+            "regions": regions,
+            "size": "",
+            "file_attributes": {}
+        }
+
+        return json
+
     def isEditable(self, point):
         """
         :param point:(x, y)
@@ -94,9 +133,6 @@ class Paper():
             if px > x and py > y and px < (x + w) and py < (y + h):
                 return (x, y, w, h)
         return False
-
-    def creat(self):
-        return Image.new("RGB", self.size, (255, 255, 255))
 
     def __str__(self):
         list = [
@@ -113,11 +149,3 @@ class Paper():
         ]
 
         return "\n".join(list)
-
-
-p = Paper()
-print(p)
-p.setSubField(3)
-p.setSpacing(40)
-print(p.getEditableArea())
-print(p.isEditable((400, 200)))
